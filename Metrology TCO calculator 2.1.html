@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>3D Scanning & Metrology TCO Calculator</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- Chart.js for bar charts -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    h1, h2 { color: #2c3e50; }
+    section { margin-bottom: 40px; padding: 20px; border: 1px solid #ccc; border-radius: 8px; display: none; }
+    section.active { display: block; }
+    label { display: block; margin-top: 10px; }
+    input[type="text"], input[type="number"] { width: 250px; padding: 5px; margin-top: 3px; }
+    button { margin-top: 15px; padding: 8px 18px; background: #3498db; color: #fff; border: none; border-radius: 4px; cursor: pointer; }
+    button:hover { background: #2980b9; }
+    button.tab { margin-right: 5px; margin-bottom: 20px; }
+    button.tab.active { background: #2c3e50; }
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+    th, td { border: 1px solid #bbb; padding: 8px; text-align: center; }
+    th { background: #f0f0f0; }
+    .results { margin-top: 20px; }
+    .chart-container { width: 100%; height: 350px; }
+    .info-icon { 
+      display: inline-block; 
+      width: 16px; 
+      height: 16px; 
+      background-color: #3498db; 
+      color: white; 
+      border-radius: 50%; 
+      text-align: center; 
+      line-height: 16px; 
+      font-size: 12px; 
+      cursor: help; 
+      margin-left: 5px;
+    }
+    .tooltip {
+      position: absolute;
+      background-color: #333;
+      color: white;
+      padding: 5px 10px;
+      border-radius: 4px;
+      font-size: 14px;
+      max-width: 250px;
+      z-index: 100;
+    }
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 101;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0,0,0,0.4);
+    }
+    .modal-content {
+      background-color: #fefefe;
+      margin: 15% auto;
+      padding: 20px;
+      border: 1px solid #888;
+      width: 50%;
+      border-radius: 8px;
+    }
+    .close {
+      color: #aaa;
+      float: right;
+      font-size: 28px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <h1>3D Scanning & Metrology TCO Calculator</h1>
+
+  <!-- Tab Navigation -->
+  <div>
+    <button class="tab active" onclick="showSection('about')">About</button>
+    <button class="tab" onclick="showSection('single-equipment-tco')">Single Equipment</button>
+    <button class="tab" onclick="showSection('equipment-comparison')">Comparison Tool</button>
+    <button class="tab" onclick="showSection('five-year-projection')">5-Year Projection</button>
+  </div>
+
+  <!-- About Section -->
+  <section id="about" class="active">
+    <h2>About This Calculator</h2>
+    <p>This calculator features:</p>
+    <ul>
+      <li>Visual charts for easy cost analysis</li>
+      <li>Detailed breakdowns of all cost components</li>
+      <li>Customizable inputs for all parameters</li>
+      <li>Ability to add/remove equipment options for comparison</li>
+    </ul>
+    <p>This tool will help organizations make more informed purchasing decisions and better understand the true long-term costs of 3D scanning/Metrology related equipment.</p>
+    <p>Feel free to use this calculator and email <a href="mailto:jerel@blackboxcv.com">jerel@blackboxcv.com</a> for any suggestions for improvements on this calculator.</p>
+  </section>
+
+  <!-- Single Equipment TCO Calculator -->
+  <section id="single-equipment-tco">
+    <h2>Single Equipment Analysis</h2>
+    <form id="tcoForm">
+      <label>Equipment Name: <input type="text" id="eqName"></label>
+      <h3>Initial Costs</h3>
+      <label>Purchase Price ($): <input type="number" id="purchasePrice"></label>
+      <label>Installation & Setup Costs ($): <input type="number" id="setupCost"></label>
+      <label>Initial Training Costs ($): <input type="number" id="trainingCost"></label>
+      <label>Infrastructure Modifications ($): <input type="number" id="infraCost">
+        <span class="info-icon" onclick="showInfoModal('infraModifications')">i</span>
+      </label>
+      <h3>Annual Operating Costs</h3>
+      <label>Annual Software License ($): <input type="number" id="softwareCost"></label>
+      <label>Annual Maintenance Contract ($): <input type="number" id="maintenanceCost"></label>
+      <label>Annual Consumables ($): <input type="number" id="consumablesCost">
+        <span class="info-icon" onclick="showInfoModal('consumables')">i</span>
+      </label>
+      <label>Annual Operator Cost ($): <input type="number" id="operatorCost"></label>
+      <label>Annual Ongoing Training ($): <input type="number" id="ongoingTraining"></label>
+      <label>Annual Power & Utility Costs ($): <input type="number" id="powerCost"></label>
+      <label>Annual Calibration Costs ($): <input type="number" id="calibrationCost"></label>
+      <h3>Depreciation & Value</h3>
+      <label>Expected Equipment Lifespan (Years): <input type="number" id="lifespan"></label>
+      <label>Expected Residual Value ($): <input type="number" id="residual"></label>
+      <label>Major Upgrade Frequency (Years): <input type="number" id="upgradeFreq"></label>
+      <label>Average Upgrade Cost ($): <input type="number" id="upgradeCost"></label>
+      <button type="button" onclick="calculateTCO()">Calculate TCO</button>
+    </form>
+    <div class="results" id="tcoResults"></div>
+    <p><strong>Notes:</strong> Total Cost of Ownership (TCO) calculation includes all direct and indirect costs associated with equipment over its lifecycle. Annual costs are projected based on current values and do not account for inflation. Depreciation is calculated using straight-line method over the expected equipment lifespan. This calculator provides estimates for planning purposes and should be adjusted based on actual vendor quotes and company-specific factors.</p>
+  </section>
+
+  <!-- Equipment Comparison Tool -->
+  <section id="equipment-comparison">
+    <h2>Equipment Comparison Tool</h2>
+    <form id="comparisonForm">
+      <div id="equipmentOptions">
+        <!-- Equipment Option 1 -->
+        <div class="equipmentOption">
+          <h4>Equipment Option 1</h4>
+          <label>Name: <input type="text" class="compName"></label>
+          <label>Purchase Price ($): <input type="number" class="compPurchase"></label>
+          <label>Annual Software License ($): <input type="number" class="compSoftware"></label>
+          <label>Annual Maintenance ($): <input type="number" class="compMaintenance"></label>
+          <label>Annual Consumables ($): <input type="number" class="compConsumables"></label>
+          <label>Expected Lifespan (Years): <input type="number" class="compLifespan"></label>
+          <label>Training Requirements (1-10): <input type="number" class="compTraining" min="1" max="10">
+            <span class="info-icon" onclick="showInfoModal('trainingRequirements')">i</span>
+          </label>
+          <label>Accuracy Rating (1-10): <input type="number" class="compAccuracy" min="1" max="10">
+            <span class="info-icon" onclick="showInfoModal('accuracyRating')">i</span>
+          </label>
+          <label>Speed Rating (1-10): <input type="number" class="compSpeed" min="1" max="10">
+            <span class="info-icon" onclick="showInfoModal('speedRating')">i</span>
+          </label>
+        </div>
+        <!-- Equipment Option 2 -->
+        <div class="equipmentOption">
+          <h4>Equipment Option 2</h4>
+          <label>Name: <input type="text" class="compName"></label>
+          <label>Purchase Price ($): <input type="number" class="compPurchase"></label>
+          <label>Annual Software License ($): <input type="number" class="compSoftware"></label>
+          <label>Annual Maintenance ($): <input type="number" class="compMaintenance"></label>
+          <label>Annual Consumables ($): <input type="number" class="compConsumables"></label>
+          <label>Expected Lifespan (Years): <input type="number" class="compLifespan"></label>
+          <label>Training Requirements (1-10): <input type="number" class="compTraining" min="1" max="10">
+            <span class="info-icon" onclick="showInfoModal('trainingRequirements')">i</span>
+          </label>
+          <label>Accuracy Rating (1-10): <input type="number" class="compAccuracy" min="1" max="10">
+            <span class="info-icon" onclick="showInfoModal('accuracyRating')">i</span>
+          </label>
+          <label>Speed Rating (1-10): <input type="number" class="compSpeed" min="1" max="10">
+            <span class="info-icon" onclick="showInfoModal('speedRating')">i</span>
+          </label>
+        </div>
+      </div>
+      <button type="button" onclick="addEquipmentOption()">Add Another Equipment Option</button>
+      <button type="button" onclick="compareEquipment()">Compare Equipment</button>
+    </form>
+    <div class="results" id="comparisonResults"></div>
+    <div class="chart-container"><canvas id="comparisonChart"></canvas></div>
+    <p><strong>Note:</strong> Value Score represents the performance (accuracy & speed) per cost unit. Higher values indicate better value.</p>
+  </section>
+
+  <!-- 5-Year Projection Calculator -->
+  <section id="five-year-projection">
+    <h2>5-Year Cost Projection</h2>
+    <form id="projectionForm">
+      <label>Equipment Name: <input type="text" id="projEquipmentName"></label>
+      <h3>Initial Investment</h3>
+      <label>Purchase Price ($): <input type="number" id="projPurchasePrice"></label>
+      <label>Setup & Installation ($): <input type="number" id="projSetupCost"></label>
+      <h3>Annual Costs</h3>
+      <label>Software Licensing ($): <input type="number" id="projSoftware"></label>
+      <label>Maintenance ($): <input type="number" id="projMaintenance"></label>
+      <label>Consumables ($): <input type="number" id="projConsumables"></label>
+      <label>Training ($): <input type="number" id="projTraining"></label>
+      <label>Labor Costs ($): <input type="number" id="projLabor"></label>
+      <h3>Growth Factors</h3>
+      <label>Annual Inflation Rate (%): <input type="number" id="projInflation" value="3"></label>
+      <label>Software Cost Annual Increase (%): <input type="number" id="projSoftwareIncrease" value="5"></label>
+      <label>Major Upgrade in Year 3 ($): <input type="number" id="projUpgradeCost">
+        <span class="info-icon" onclick="showInfoModal('upgradeYear3')">i</span>
+      </label>
+      <button type="button" onclick="calculate5YearProjection()">Calculate 5-Year Projection</button>
+    </form>
+    <div class="results" id="projectionResults"></div>
+    <p><strong>Projection Notes:</strong> This projection incorporates inflation and specific cost increases over time. Year 3 includes a planned major upgrade to maintain technological relevance. Annual costs compound over time based on the specified rates. This projection helps in budgeting and financial planning for long-term equipment ownership.</p>
+  </section>
+
+  <!-- Info Modal -->
+  <div id="infoModal" class="modal">
+    <div class="modal-content">
+      <span class="close" onclick="closeModal()">&times;</span>
+      <div id="modalContent"></div>
+    </div>
+  </div>
+
+  <script>
+    // Tab Navigation
+    function showSection(sectionId) {
+      // Hide all sections
+      document.querySelectorAll('section').forEach(section => {
+        section.classList.remove('active');
+      });
+      
+      // Deactivate all tabs
+      document.querySelectorAll('button.tab').forEach(tab => {
+        tab.classList.remove('active');
+      });
+      
+      // Show selected section and activate its tab
+      document.getElementById(sectionId).classList.add('active');
+      event.target.classList.add('active');
+    }
+
+    // Info Modal Functions
+    function showInfoModal(infoType) {
+      const modal = document.getElementById('infoModal');
+      const content = document.getElementById('modalContent');
+      
+      let infoText = '';
+      switch(infoType) {
+        case 'infraModifications':
+          infoText = '<h3>Infrastructure Modifications</h3><p>This includes any physical changes needed to accommodate the equipment, such as electrical upgrades, HVAC modifications, specialized flooring, or structural reinforcements required for proper installation and operation.</p>';
+          break;
+        case 'consumables':
+          infoText = '<h3>Annual Consumables</h3><p>These are items that need regular replacement, such as calibration targets, probe tips, protective films, cleaning solutions, or any other disposable components required for normal operation.</p>';
+          break;
+        case 'upgradeYear3':
+          infoText = '<h3>Major Upgrade in Year 3</h3><p>This represents a significant system upgrade to maintain technological competitiveness, which might include new sensors, software packages, or hardware components that substantially improve capabilities.</p>';
+          break;
+        case 'trainingRequirements':
+          infoText = '<h3>Training Requirements (1-10)</h3><p>1 = Minimal training needed (intuitive operation)<br>10 = Extensive training required (complex operation requiring specialized skills)</p>';
+          break;
+        case 'accuracyRating':
+          infoText = '<h3>Accuracy Rating (1-10)</h3><p>1 = Low accuracy (suitable for rough measurements)<br>10 = High accuracy (suitable for precision metrology applications)</p>';
+          break;
+        case 'speedRating':
+          infoText = '<h3>Speed Rating (1-10)</h3><p>1 = Slow scanning/measurement speed<br>10 = Fast scanning/measurement speed</p>';
+          break;
+        default:
+          infoText = '<p>Information not available.</p>';
+      }
+      
+      content.innerHTML = infoText;
+      modal.style.display = 'block';
+    }
+
+    function closeModal() {
+      document.getElementById('infoModal').style.display = 'none';
+    }
+
+    // Close modal when clicking outside of it
+    window.onclick = function(event) {
+      const modal = document.getElementById('infoModal');
+      if (event.target == modal) {
+        modal.style.display = 'none';
+      }
+    }
+
+    // --- Single Equipment TCO Calculator ---
+    function calculateTCO() {
+      const name = document.getElementById('eqName').value;
+      const purchase = parseFloat(document.getElementById('purchasePrice').value) || 0;
+      const setup = parseFloat(document.getElementById('setupCost').value) || 0;
+      const training = parseFloat(document.getElementById('trainingCost').value) || 0;
+      const infra = parseFloat(document.getElementById('infraCost').value) || 0;
+      const software = parseFloat(document.getElementById('softwareCost').value) || 0;
+      const maintenance = parseFloat(document.getElementById('maintenanceCost').value) || 0;
+      const consumables = parseFloat(document.getElementById('consumablesCost').value) || 0;
+      const operator = parseFloat(document.getElementById('operatorCost').value) || 0;
+      const ongoingTraining = parseFloat(document.getElementById('ongoingTraining').value) || 0;
+      const power = parseFloat(document.getElementById('powerCost').value) || 0;
+      const calibration = parseFloat(document.getElementById('calibrationCost').value) || 0;
+      const lifespan = parseFloat(document.getElementById('lifespan').value) || 1;
+      const residual = parseFloat(document.getElementById('residual').value) || 0;
+      const upgradeFreq = parseFloat(document.getElementById('upgradeFreq').value) || 0;
+      const upgradeCost = parseFloat(document.getElementById('upgradeCost').value) || 0;
+
+      const initialCost = purchase + setup + training + infra;
+      const annualCost = software + maintenance + consumables + operator + ongoingTraining + power + calibration;
+      const numUpgrades = upgradeFreq > 0 ? Math.floor(lifespan / upgradeFreq) : 0;
+      const totalUpgradeCost = numUpgrades * upgradeCost;
+      const depreciation = (purchase - residual) / lifespan;
+      const tco = initialCost + (annualCost * lifespan) + totalUpgradeCost - residual;
+
+      document.getElementById('tcoResults').innerHTML = `
+        <h4>Results for: ${name || 'Equipment'}</h4>
+        <table>
+          <tr><th>Initial Cost</th><td>$${initialCost.toLocaleString()}</td></tr>
+          <tr><th>Annual Operating Cost</th><td>$${annualCost.toLocaleString()}</td></tr>
+          <tr><th>Expected Lifespan</th><td>${lifespan} years</td></tr>
+          <tr><th>Depreciation (per year)</th><td>$${depreciation.toLocaleString(undefined, {maximumFractionDigits:2})}</td></tr>
+          <tr><th>Total Upgrade Cost</th><td>$${totalUpgradeCost.toLocaleString()}</td></tr>
+          <tr><th>Expected Residual Value</th><td>$${residual.toLocaleString()}</td></tr>
+          <tr><th><b>Total Cost of Ownership (TCO)</b></th><td><b>$${tco.toLocaleString(undefined, {maximumFractionDigits:2})}</b></td></tr>
+        </table>
+      `;
+    }
+
+    // --- Equipment Comparison Tool ---
+    let equipmentCount = 2;
+    function addEquipmentOption() {
+      equipmentCount++;
+      const container = document.getElementById('equipmentOptions');
+      const div = document.createElement('div');
+      div.className = 'equipmentOption';
+      div.innerHTML = `
+        <h4>Equipment Option ${equipmentCount}</h4>
+        <label>Name: <input type="text" class="compName"></label>
+        <label>Purchase Price ($): <input type="number" class="compPurchase"></label>
+        <label>Annual Software License ($): <input type="number" class="compSoftware"></label>
+        <label>Annual Maintenance ($): <input type="number" class="compMaintenance"></label>
+        <label>Annual Consumables ($): <input type="number" class="compConsumables"></label>
+        <label>Expected Lifespan (Years): <input type="number" class="compLifespan"></label>
+        <label>Training Requirements (1-10): <input type="number" class="compTraining" min="1" max="10">
+          <span class="info-icon" onclick="showInfoModal('trainingRequirements')">i</span>
+        </label>
+        <label>Accuracy Rating (1-10): <input type="number" class="compAccuracy" min="1" max="10">
+          <span class="info-icon" onclick="showInfoModal('accuracyRating')">i</span>
+        </label>
+        <label>Speed Rating (1-10): <input type="number" class="compSpeed" min="1" max="10">
+          <span class="info-icon" onclick="showInfoModal('speedRating')">i</span>
+        </label>
+      `;
+      container.appendChild(div);
+    }
+
+    let comparisonChart = null;
+    function compareEquipment() {
+      // Gather data
+      const names = Array.from(document.querySelectorAll('.compName')).map(input => input.value || 'Option');
+      const purchases = Array.from(document.querySelectorAll('.compPurchase')).map(input => parseFloat(input.value) || 0);
+      const softwares = Array.from(document.querySelectorAll('.compSoftware')).map(input => parseFloat(input.value) || 0);
+      const maintenances = Array.from(document.querySelectorAll('.compMaintenance')).map(input => parseFloat(input.value) || 0);
+      const consumables = Array.from(document.querySelectorAll('.compConsumables')).map(input => parseFloat(input.value) || 0);
+      const lifespans = Array.from(document.querySelectorAll('.compLifespan')).map(input => parseFloat(input.value) || 1);
+      const trainings = Array.from(document.querySelectorAll('.compTraining')).map(input => parseFloat(input.value) || 0);
+      const accuracies = Array.from(document.querySelectorAll('.compAccuracy')).map(input => parseFloat(input.value) || 0);
+      const speeds = Array.from(document.querySelectorAll('.compSpeed')).map(input => parseFloat(input.value) || 0);
+
+      // Calculate annual cost, TCO, value score
+      const annualCosts = softwares.map((s, i) => s + maintenances[i] + consumables[i]);
+      const tcos = purchases.map((p, i) => p + annualCosts[i] * 5);
+      const annualTCOs = tcos.map((tco, i) => tco / lifespans[i]);
+      const valueScores = accuracies.map((a, i) => (a + speeds[i]) / (purchases[i] + annualCosts[i] * lifespans[i]) * 1000);
+
+      // Create results table
+      let table = `<table><tr><th>Criteria</th>${names.map(n => `<th>${n}</th>`).join('')}</tr>`;
+      table += `<tr><td>Purchase Price</td>${purchases.map(p => `<td>$${p.toLocaleString()}</td>`).join('')}</tr>`;
+      table += `<tr><td>Annual Software</td>${softwares.map(s => `<td>$${s.toLocaleString()}</td>`).join('')}</tr>`;
+      table += `<tr><td>Annual Maintenance</td>${maintenances.map(m => `<td>$${m.toLocaleString()}</td>`).join('')}</tr>`;
+      table += `<tr><td>Annual Consumables</td>${consumables.map(c => `<td>$${c.toLocaleString()}</td>`).join('')}</tr>`;
+      table += `<tr><td>Expected Lifespan</td>${lifespans.map(l => `<td>${l} years</td>`).join('')}</tr>`;
+      table += `<tr><td>Training Requirements</td>${trainings.map(t => `<td>${t}/10</td>`).join('')}</tr>`;
+      table += `<tr><td>Accuracy Rating</td>${accuracies.map(a => `<td>${a}/10</td>`).join('')}</tr>`;
+      table += `<tr><td>Speed Rating</td>${speeds.map(s => `<td>${s}/10</td>`).join('')}</tr>`;
+      table += `<tr><td>Annual Operating Cost</td>${annualCosts.map(a => `<td>$${a.toLocaleString()}</td>`).join('')}</tr>`;
+      table += `<tr><td>5-Year TCO</td>${tcos.map(t => `<td>$${t.toLocaleString()}</td>`).join('')}</tr>`;
+      table += `<tr><td>Annual TCO</td>${annualTCOs.map(a => `<td>$${a.toLocaleString(undefined, {maximumFractionDigits:2})}</td>`).join('')}</tr>`;
+      table += `<tr><td>Value Score</td>${valueScores.map(v => `<td>${v.toFixed(2)}</td>`).join('')}</tr>`;
+      table += `</table>`;
+      document.getElementById('comparisonResults').innerHTML = table;
+
+      // Chart
+      const ctx = document.getElementById('comparisonChart').getContext('2d');
+      if (comparisonChart) comparisonChart.destroy();
+      comparisonChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: names,
+          datasets: [
+            {
+              label: 'Purchase Price',
+              data: purchases,
+              backgroundColor: 'rgba(54, 162, 235, 0.6)',
+              borderColor: 'rgba(54, 162, 235, 1)',
+              borderWidth: 1
+            },
+            {
+              label: '5-Year Operating Costs',
+              data: annualCosts.map(a => a * 5),
+              backgroundColor: 'rgba(75, 192, 192, 0.6)',
+              borderColor: 'rgba(75, 192, 192, 1)',
+              borderWidth: 1
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            x: { stacked: true },
+            y: {
+              stacked: true,
+              title: { display: true, text: 'Cost ($)' }
+            }
+          },
+          plugins: {
+            title: {
+              display: true,
+              text: '5-Year Cost Comparison',
+              font: { size: 16 }
+            }
+          }
+        }
+      });
+    }
+
+    // --- 5-Year Projection Calculator ---
+    function calculate5YearProjection() {
+      const equipmentName = document.getElementById('projEquipmentName').value;
+      const purchasePrice = parseFloat(document.getElementById('projPurchasePrice').value) || 0;
+      const setupCost = parseFloat(document.getElementById('projSetupCost').value) || 0;
+      const softwareCost = parseFloat(document.getElementById('projSoftware').value) || 0;
+      const maintenanceCost = parseFloat(document.getElementById('projMaintenance').value) || 0;
+      const consumablesCost = parseFloat(document.getElementById('projConsumables').value) || 0;
+      const trainingCost = parseFloat(document.getElementById('projTraining').value) || 0;
+      const laborCost = parseFloat(document.getElementById('projLabor').value) || 0;
+      const inflationRate = parseFloat(document.getElementById('projInflation').value) || 3;
+      const softwareIncrease = parseFloat(document.getElementById('projSoftwareIncrease').value) || 5;
+      const upgradeCost = parseFloat(document.getElementById('projUpgradeCost').value) || 0;
+
+      const years = [];
+      const initialCost = purchasePrice + setupCost;
+      let cumulativeCost = initialCost;
+
+      // Year 1
+      const year1OperatingCost = softwareCost + maintenanceCost + consumablesCost + trainingCost + laborCost;
+      years.push({
+        year: 1,
+        initialInvestment: initialCost,
+        software: softwareCost,
+        maintenance: maintenanceCost,
+        consumables: consumablesCost,
+        training: trainingCost,
+        labor: laborCost,
+        upgrades: 0,
+        totalAnnual: initialCost + year1OperatingCost,
+        operatingCost: year1OperatingCost,
+        cumulativeCost: initialCost + year1OperatingCost
+      });
+      cumulativeCost += year1OperatingCost;
+
+      // Years 2-5
+      for (let i = 2; i <= 5; i++) {
+        const inflationFactor = Math.pow(1 + (inflationRate / 100), i - 1);
+        const softwareFactor = Math.pow(1 + (softwareIncrease / 100), i - 1);
+        const yearSoftware = softwareCost * softwareFactor;
+        const yearMaintenance = maintenanceCost * inflationFactor;
+        const yearConsumables = consumablesCost * inflationFactor;
+        const yearTraining = trainingCost * inflationFactor;
+        const yearLabor = laborCost * inflationFactor;
+        const yearUpgrade = (i === 3) ? upgradeCost : 0;
+        const yearOperatingCost = yearSoftware + yearMaintenance + yearConsumables + yearTraining + yearLabor;
+        const yearTotalCost = yearOperatingCost + yearUpgrade;
+        cumulativeCost += yearTotalCost;
+
+        years.push({
+          year: i,
+          initialInvestment: 0,
+          software: yearSoftware,
+          maintenance: yearMaintenance,
+          consumables: yearConsumables,
+          training: yearTraining,
+          labor: yearLabor,
+          upgrades: yearUpgrade,
+          totalAnnual: yearTotalCost,
+          operatingCost: yearOperatingCost,
+          cumulativeCost: cumulativeCost
+        });
+      }
+
+      // Create results table
+      let tableHTML = `<table>
+        <tr><th>Cost Category</th><th>Year 1</th><th>Year 2</th><th>Year 3</th><th>Year 4</th><th>Year 5</th><th>5-Year Total</th></tr>
+        <tr><td>Initial Investment</td>${years.map(y => `<td>$${Math.round(y.initialInvestment).toLocaleString()}</td>`).join('')}<td>$${Math.round(years[0].initialInvestment).toLocaleString()}</td></tr>
+        <tr><td>Software</td>${years.map(y => `<td>$${Math.round(y.software).toLocaleString()}</td>`).join('')}<td>$${Math.round(years.reduce((sum, y) => sum + y.software, 0)).toLocaleString()}</td></tr>
+        <tr><td>Maintenance</td>${years.map(y => `<td>$${Math.round(y.maintenance).toLocaleString()}</td>`).join('')}<td>$${Math.round(years.reduce((sum, y) => sum + y.maintenance, 0)).toLocaleString()}</td></tr>
+        <tr><td>Consumables</td>${years.map(y => `<td>$${Math.round(y.consumables).toLocaleString()}</td>`).join('')}<td>$${Math.round(years.reduce((sum, y) => sum + y.consumables, 0)).toLocaleString()}</td></tr>
+        <tr><td>Training</td>${years.map(y => `<td>$${Math.round(y.training).toLocaleString()}</td>`).join('')}<td>$${Math.round(years.reduce((sum, y) => sum + y.training, 0)).toLocaleString()}</td></tr>
+        <tr><td>Labor</td>${years.map(y => `<td>$${Math.round(y.labor).toLocaleString()}</td>`).join('')}<td>$${Math.round(years.reduce((sum, y) => sum + y.labor, 0)).toLocaleString()}</td></tr>
+        <tr><td>Upgrades</td>${years.map(y => `<td>$${Math.round(y.upgrades).toLocaleString()}</td>`).join('')}<td>$${Math.round(years.reduce((sum, y) => sum + y.upgrades, 0)).toLocaleString()}</td></tr>
+        <tr><td>Annual Total</td>${years.map(y => `<td>$${Math.round(y.totalAnnual).toLocaleString()}</td>`).join('')}<td>$${Math.round(years.reduce((sum, y) => sum + y.totalAnnual, 0)).toLocaleString()}</td></tr>
+        <tr><td>Cumulative Cost</td>${years.map(y => `<td>$${Math.round(y.cumulativeCost).toLocaleString()}</td>`).join('')}<td>-</td></tr>
+      </table>`;
+
+      document.getElementById('projectionResults').innerHTML = `
+        <h4>5-Year Projection for: ${equipmentName || 'Equipment'}</h4>
+        ${tableHTML}
+      `;
+    }
+  </script>
+</body>
+</html>
